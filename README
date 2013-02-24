@@ -1,16 +1,18 @@
-This project provides a Servlet API implementation that can be integrated
-into the Netty.IO framework (http://netty.io/).
+This project provides a Servlet API implementation for Netty.IO framework (http://netty.io/).
 
-This gives a possibility to integrate existing Servlet API based web-applications
+Netty Servlet Bridge allows integration of existing Servlet API based web-applications
 into the Netty-backed infrastructure.
 
 Simple usage example:
 
-```java
+---------------------------------------------------------------------
+
 // Configure netty server.
 final ServerBootstrap bootstrap = new ServerBootstrap(
-    new NioServerSocketChannelFactory(Executors
-        .newCachedThreadPool(), Executors.newCachedThreadPool()));
+    new NioServerSocketChannelFactory(
+        Executors.newCachedThreadPool(), Executors.newCachedThreadPool()
+    )
+);
 
 // configure web-app
 WebappConfiguration webapp = new WebappConfiguration()
@@ -23,18 +25,18 @@ WebappConfiguration webapp = new WebappConfiguration()
             .addInitParameter("initpram2", "value2")
 
     )
-    addFilterConfigurations (
+    .addFilterConfigurations (
         new FilterConfiguration(MyServletFilter.class, "/*"),
     );
 
 
 // Set up the event pipeline factory.
-final ServletBridgeChannelPipelineFactory servletBridge = new ServletBridgeChannelPipelineFactory(webapp);
-bootstrap.setPipelineFactory(servletBridge);
+bootstrap.setPipelineFactory(new ServletBridgeChannelPipelineFactory(webapp));
 
 // Bind and start to accept incoming connections.
 final Channel serverChannel = bootstrap.bind(new InetSocketAddress(8080));
-```
+
+---------------------------------------------------------------------
 
 Please consult example projects demonstrating the library usage.
 
