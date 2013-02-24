@@ -199,7 +199,7 @@ public final class Utils {
 
             // Parse the q-value
             /*
-			 * Double q = 1.0D; for (String s : arr) { s = s.trim(); if
+             * Double q = 1.0D; for (String s : arr) { s = s.trim(); if
 			 * (s.startsWith("q=")) { q =
 			 * Double.parseDouble(s.substring(2).trim()); break; } }
 			 */
