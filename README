@@ -5,8 +5,8 @@ into the Netty-backed infrastructure.
 
 Simple usage example:
 
----------------------------------------------------------------------
 
+```java
 // Configure netty server.
 final ServerBootstrap bootstrap = new ServerBootstrap(
     new NioServerSocketChannelFactory(
@@ -36,7 +36,7 @@ bootstrap.setPipelineFactory(new ServletBridgeChannelPipelineFactory(webapp));
 // Bind and start to accept incoming connections.
 final Channel serverChannel = bootstrap.bind(new InetSocketAddress(8080));
 
----------------------------------------------------------------------
+```
 
 Please consult example projects demonstrating the library usage.
 
