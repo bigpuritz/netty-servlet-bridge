@@ -38,4 +38,14 @@ public class ServletInputStreamImpl extends ServletInputStream {
         return this.in.read();
     }
 
+    @Override
+    public int read(byte[] buf) throws IOException {
+        return this.in.read(buf);
+    }
+
+    @Override
+    public int read(byte[] buf, int offset, int len) throws IOException {
+        return this.in.read(buf,offset,len);
+    }
+
 }

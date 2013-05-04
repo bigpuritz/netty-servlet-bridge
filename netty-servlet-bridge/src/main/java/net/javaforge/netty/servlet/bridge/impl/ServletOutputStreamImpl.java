@@ -42,6 +42,16 @@ public class ServletOutputStreamImpl extends ServletOutputStream {
     }
 
     @Override
+    public void write(byte[] b) throws IOException {
+        this.out.write(b);
+    }
+
+    @Override
+    public void write(byte[] b, int offset, int len) throws IOException {
+        this.out.write(b,offset,len);
+    }
+
+    @Override
     public void flush() throws IOException {
         this.response.setContent(out.buffer());
         this.flushed = true;
