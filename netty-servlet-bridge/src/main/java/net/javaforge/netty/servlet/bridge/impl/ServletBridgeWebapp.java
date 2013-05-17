@@ -48,9 +48,9 @@ public class ServletBridgeWebapp {
         this.webappConfig = webapp;
         this.sharedChannelGroup = sharedChannelGroup;
         this.initServletContext();
+        this.initContextListeners();
         this.initFilters();
         this.initServlets();
-        this.initContextListeners();
     }
 
     public void destroy() {
