@@ -41,7 +41,7 @@ public class ServletBridgeWebapp {
         return instance;
     }
 
-    private ServletBridgeWebapp() {
+    public ServletBridgeWebapp() {
     }
 
     public void init(WebappConfiguration webapp, ChannelGroup sharedChannelGroup) {

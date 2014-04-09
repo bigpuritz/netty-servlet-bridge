@@ -239,4 +239,11 @@ public class WebappConfiguration {
     public File getStaticResourcesFolder() {
         return staticResourcesFolder;
     }
+    public Collection<ServletConfiguration> getServlets() {
+		return servlets;
+    }
+
+    public void setServlets(Collection<ServletConfiguration> servlets) {
+		this.servlets = servlets;
+    }
 }
