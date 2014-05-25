@@ -69,6 +69,7 @@ public class ServletBridgeChannelPipelineFactory implements
         this.allChannels.close().awaitUninterruptibly();
     }
 
+    
     @Override
     public final ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = this.getDefaulHttpChannelPipeline();
@@ -105,6 +106,14 @@ public class ServletBridgeChannelPipelineFactory implements
         pipeline.addLast("idle", this.idleStateHandler);
 
         return pipeline;
+    }
+    
+    public ChannelGroup getAllChannels() {
+      	return allChannels;
+    }
+        
+    public void setAllChannels(ChannelGroup allChannels) {
+      	this.allChannels = allChannels;
     }
 
     private class HttpSessionWatchdog implements Runnable {
