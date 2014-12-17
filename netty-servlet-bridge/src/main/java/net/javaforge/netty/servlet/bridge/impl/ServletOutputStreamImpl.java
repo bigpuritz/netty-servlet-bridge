@@ -16,24 +16,26 @@
 
 package net.javaforge.netty.servlet.bridge.impl;
 
-import org.jboss.netty.buffer.ChannelBufferOutputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.handler.codec.http.HttpResponse;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpResponse;
 
 import javax.servlet.ServletOutputStream;
 import java.io.IOException;
 
 public class ServletOutputStreamImpl extends ServletOutputStream {
 
-    private HttpResponse response;
+    private FullHttpResponse response;
 
-    private ChannelBufferOutputStream out;
+    private ByteBufOutputStream out;
 
     private boolean flushed = false;
 
-    public ServletOutputStreamImpl(HttpResponse response) {
+    public ServletOutputStreamImpl(FullHttpResponse response) {
         this.response = response;
-        this.out = new ChannelBufferOutputStream(ChannelBuffers.dynamicBuffer());
+        this.out = new ByteBufOutputStream(response.content());
     }
 
     @Override
@@ -53,7 +55,7 @@ public class ServletOutputStreamImpl extends ServletOutputStream {
 
     @Override
     public void flush() throws IOException {
-        this.response.setContent(out.buffer());
+//        this.response.setContent(out.buffer());
         this.flushed = true;
     }
 

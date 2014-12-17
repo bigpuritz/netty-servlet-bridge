@@ -16,36 +16,38 @@
 
 package net.javaforge.netty.servlet.bridge;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.timeout.IdleStateHandler;
 import net.javaforge.netty.servlet.bridge.impl.FilterChainImpl;
 import net.javaforge.netty.servlet.bridge.impl.HttpServletRequestImpl;
 import net.javaforge.netty.servlet.bridge.impl.HttpServletResponseImpl;
 import net.javaforge.netty.servlet.bridge.impl.ServletBridgeWebapp;
 import net.javaforge.netty.servlet.bridge.util.Utils;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.*;
-import org.jboss.netty.handler.codec.frame.TooLongFrameException;
-import org.jboss.netty.handler.codec.http.*;
-import org.jboss.netty.handler.ssl.SslHandler;
-import org.jboss.netty.handler.stream.ChunkedFile;
-import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
-import org.jboss.netty.handler.timeout.IdleStateEvent;
-import org.jboss.netty.util.CharsetUtil;
+import io.netty.channel.*;
+import io.netty.handler.codec.TooLongFrameException;
+import io.netty.handler.codec.http.*;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.stream.ChunkedFile;
+import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.setContentLength;
-import static org.jboss.netty.handler.codec.http.HttpMethod.GET;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
-import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static io.netty.handler.codec.http.HttpHeaders.setContentLength;
+import static io.netty.handler.codec.http.HttpMethod.GET;
+import static io.netty.handler.codec.http.HttpResponseStatus.*;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
-public class ServletBridgeHandler extends IdleStateAwareChannelHandler {
+public class ServletBridgeHandler extends IdleStateHandler {
+
 
     private static final Logger log = LoggerFactory
             .getLogger(ServletBridgeHandler.class);
@@ -53,38 +55,39 @@ public class ServletBridgeHandler extends IdleStateAwareChannelHandler {
     private List<ServletBridgeInterceptor> interceptors;
 
     public ServletBridgeHandler() {
+        super(20000, 20000, 20000);
     }
 
     public ServletBridgeHandler addInterceptor(
             ServletBridgeInterceptor interceptor) {
 
-        if (this.interceptors == null)
-            this.interceptors = new ArrayList<ServletBridgeInterceptor>();
+        if (interceptors == null)
+            interceptors = new ArrayList<ServletBridgeInterceptor>();
 
-        this.interceptors.add(interceptor);
+        interceptors.add(interceptor);
         return this;
     }
 
     @Override
-    public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e)
+    public void channelActive(ChannelHandlerContext ctx)
             throws Exception {
-        log.debug("Opening new channel: {}", e.getChannel().getId());
-        ServletBridgeWebapp.get().getSharedChannelGroup().add(e.getChannel());
+        log.debug("Opening new channel: {}", ctx.channel().id());
+        ServletBridgeWebapp.get().getSharedChannelGroup().add(ctx.channel());
     }
 
     @Override
     public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e) {
-        log.debug("Closing idle channel: {}", e.getChannel().getId());
-        e.getChannel().close();
+        log.debug("Closing idle channel: {}", ctx.channel().id());
+       ctx.channel().close();
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
+    public void channelRead(ChannelHandlerContext ctx, Object e)
             throws Exception {
 
-        HttpRequest request = (HttpRequest) e.getMessage();
+        HttpRequest request = (HttpRequest)e;
         if (HttpHeaders.is100ContinueExpected(request)) {
-            e.getChannel().write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
+            ctx.channel().write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
         }
 
         FilterChainImpl chain = ServletBridgeWebapp.get().initializeChain(
@@ -92,11 +95,11 @@ public class ServletBridgeHandler extends IdleStateAwareChannelHandler {
 
         if (chain.isValid()) {
 
-            handleHttpServletRequest(ctx, e, chain);
+            handleHttpServletRequest(ctx, request, chain);
 
         } else if (ServletBridgeWebapp.get().getStaticResourcesFolder() != null) {
 
-            handleStaticResourceRequest(ctx, e);
+            handleStaticResourceRequest(ctx, request);
 
         } else {
 
@@ -107,36 +110,35 @@ public class ServletBridgeHandler extends IdleStateAwareChannelHandler {
     }
 
     protected void handleHttpServletRequest(ChannelHandlerContext ctx,
-                                            MessageEvent e, FilterChainImpl chain) throws Exception {
+                                            HttpRequest request, FilterChainImpl chain) throws Exception {
 
-        interceptOnRequestReceived(ctx, e);
+        interceptOnRequestReceived(ctx, request);
 
-        HttpRequest request = (HttpRequest) e.getMessage();
-        HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
+        DefaultFullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK);
 
         HttpServletResponseImpl resp = buildHttpServletResponse(response);
         HttpServletRequestImpl req = buildHttpServletRequest(request, chain);
 
         chain.doFilter(req, resp);
 
-        interceptOnRequestSuccessed(ctx, e, response);
+        interceptOnRequestSuccessed(ctx, request, response);
 
         resp.getWriter().flush();
 
         boolean keepAlive = HttpHeaders.isKeepAlive(request);
 
         if (keepAlive) {
+
             // Add 'Content-Length' header only for a keep-alive connection.
-            response.setHeader(CONTENT_LENGTH, response.getContent()
-                    .readableBytes());
+            response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
             // Add keep alive header as per:
             // -
             // http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
-            response.setHeader(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+            response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
         }
 
         // write response...
-        ChannelFuture future = e.getChannel().write(response);
+        ChannelFuture future = ctx.channel().write(response);
 
         if (!keepAlive) {
             future.addListener(ChannelFutureListener.CLOSE);
@@ -145,9 +147,7 @@ public class ServletBridgeHandler extends IdleStateAwareChannelHandler {
     }
 
     protected void handleStaticResourceRequest(ChannelHandlerContext ctx,
-                                               MessageEvent e) throws Exception {
-
-        HttpRequest request = (HttpRequest) e.getMessage();
+                                               HttpRequest request) throws Exception {
         if (request.getMethod() != GET) {
             sendError(ctx, METHOD_NOT_ALLOWED);
             return;
@@ -186,7 +186,7 @@ public class ServletBridgeHandler extends IdleStateAwareChannelHandler {
         HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
         setContentLength(response, fileLength);
 
-        Channel ch = e.getChannel();
+        Channel ch = ctx.channel();
 
         // Write the initial line and the header.
         ch.write(response);
@@ -201,15 +201,17 @@ public class ServletBridgeHandler extends IdleStateAwareChannelHandler {
             final FileRegion region = new DefaultFileRegion(raf.getChannel(),
                     0, fileLength);
             writeFuture = ch.write(region);
-            writeFuture.addListener(new ChannelFutureProgressListener() {
-                public void operationComplete(ChannelFuture future) {
-                    region.releaseExternalResources();
+            writeFuture.addListener(new ChannelProgressiveFutureListener() {
+
+                @Override
+                public void operationProgressed(ChannelProgressiveFuture channelProgressiveFuture, long current, long total) throws Exception {
+                    System.out.printf("%s: %d / %d (+%d)%n", path, current,
+                        total, total);
                 }
 
-                public void operationProgressed(ChannelFuture future,
-                                                long amount, long current, long total) {
-                    System.out.printf("%s: %d / %d (+%d)%n", path, current,
-                            total, amount);
+                @Override
+                public void operationComplete(ChannelProgressiveFuture channelProgressiveFuture) throws Exception {
+                    region.release();
                 }
             });
         }
@@ -217,23 +219,19 @@ public class ServletBridgeHandler extends IdleStateAwareChannelHandler {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-        Throwable cause = e.getCause();
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         log.error("Unexpected exception from downstream.", cause);
 
-        Channel ch = e.getChannel();
+        Channel ch = ctx.channel();
         if (cause instanceof IllegalArgumentException) {
-
             ch.close();
-
         } else {
-
             if (cause instanceof TooLongFrameException) {
                 sendError(ctx, BAD_REQUEST);
                 return;
             }
 
-            if (ch.isConnected()) {
+            if (ch.isActive()) {
                 sendError(ctx, INTERNAL_SERVER_ERROR);
             }
 
@@ -242,30 +240,41 @@ public class ServletBridgeHandler extends IdleStateAwareChannelHandler {
     }
 
     private void sendError(ChannelHandlerContext ctx, HttpResponseStatus status) {
-        HttpResponse response = new DefaultHttpResponse(HTTP_1_1, status);
-        response.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
-        response.setContent(ChannelBuffers.copiedBuffer("Failure: "
-                + status.toString() + "\r\n", CharsetUtil.UTF_8));
-        ctx.getChannel().write(response).addListener(
-                ChannelFutureListener.CLOSE);
+        String text = "Failure: " + status.toString() + "\r\n";
+        ByteBuf byteBuf = Unpooled.buffer();
+        byte[] bytes = null;
+        try {
+            bytes = text.getBytes("utf-8");
+            byteBuf.writeBytes(bytes);
+        } catch (UnsupportedEncodingException e) {
+        }
+
+        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, byteBuf);
+        HttpHeaders headers = response.headers();
+
+        headers.add(CONTENT_TYPE, "text/plain;charset=utf-8");
+        headers.add(CACHE_CONTROL, "no-cache");
+        headers.add(PRAGMA, "No-cache");
+        headers.add(SERVER, "eBay Server");
+        headers.add(CONTENT_LENGTH, byteBuf.readableBytes());
+        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
     }
 
     private void interceptOnRequestReceived(ChannelHandlerContext ctx,
-                                            MessageEvent e) {
-
-        if (this.interceptors != null) {
-            for (ServletBridgeInterceptor interceptor : this.interceptors) {
-                interceptor.onRequestReceived(ctx, e);
+                                            HttpRequest request) {
+        if (interceptors != null) {
+            for (ServletBridgeInterceptor interceptor : interceptors) {
+                interceptor.onRequestReceived(ctx, request);
             }
         }
 
     }
 
     private void interceptOnRequestSuccessed(ChannelHandlerContext ctx,
-                                             MessageEvent e, HttpResponse response) {
-        if (this.interceptors != null) {
-            for (ServletBridgeInterceptor interceptor : this.interceptors) {
-                interceptor.onRequestSuccessed(ctx, e, response);
+                                             HttpRequest request, HttpResponse response) {
+        if (interceptors != null) {
+            for (ServletBridgeInterceptor interceptor : interceptors) {
+                interceptor.onRequestSuccessed(ctx, request, response);
             }
         }
 
@@ -282,7 +291,7 @@ public class ServletBridgeHandler extends IdleStateAwareChannelHandler {
     // }
 
     protected HttpServletResponseImpl buildHttpServletResponse(
-            HttpResponse response) {
+            FullHttpResponse response) {
         return new HttpServletResponseImpl(response);
     }
 
@@ -292,6 +301,6 @@ public class ServletBridgeHandler extends IdleStateAwareChannelHandler {
     }
 
     private boolean isSslChannel(Channel ch) {
-        return ch.getPipeline().get(SslHandler.class) != null;
+        return ch.pipeline().get(SslHandler.class) != null;
     }
 }

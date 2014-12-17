@@ -20,7 +20,7 @@ import net.javaforge.netty.servlet.bridge.config.FilterConfiguration;
 import net.javaforge.netty.servlet.bridge.config.ServletConfiguration;
 import net.javaforge.netty.servlet.bridge.config.ServletContextListenerConfiguration;
 import net.javaforge.netty.servlet.bridge.config.WebappConfiguration;
-import org.jboss.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.ChannelGroup;
 
 import java.io.File;
 import java.util.Map;

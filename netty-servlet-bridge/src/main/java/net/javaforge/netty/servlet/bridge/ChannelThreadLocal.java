@@ -16,7 +16,7 @@
 
 package net.javaforge.netty.servlet.bridge;
 
-import org.jboss.netty.channel.Channel;
+import io.netty.channel.Channel;
 
 public class ChannelThreadLocal {
 

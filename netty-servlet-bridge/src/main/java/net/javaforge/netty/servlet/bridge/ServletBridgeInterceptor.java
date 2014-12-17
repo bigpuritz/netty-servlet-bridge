@@ -16,19 +16,18 @@
 
 package net.javaforge.netty.servlet.bridge;
 
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.handler.codec.http.HttpResponse;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
 
 public interface ServletBridgeInterceptor {
 
-    void onRequestReceived(ChannelHandlerContext ctx, MessageEvent e);
+    void onRequestReceived(ChannelHandlerContext ctx, HttpRequest e);
 
-    void onRequestSuccessed(ChannelHandlerContext ctx, MessageEvent e,
+    void onRequestSuccessed(ChannelHandlerContext ctx, HttpRequest e,
                             HttpResponse response);
 
-    void onRequestFailed(ChannelHandlerContext ctx, ExceptionEvent e,
+    void onRequestFailed(ChannelHandlerContext ctx, Throwable e,
                          HttpResponse response);
 
 }
