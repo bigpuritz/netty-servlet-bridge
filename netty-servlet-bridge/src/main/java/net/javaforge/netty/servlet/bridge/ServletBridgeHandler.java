@@ -54,8 +54,19 @@ public class ServletBridgeHandler extends IdleStateHandler {
 
     private List<ServletBridgeInterceptor> interceptors;
 
+
+    /**
+     * Which uri should be passed into this servlet container
+     */
+    private String uriPrefix = "/";
+
     public ServletBridgeHandler() {
+        this("/");
+    }
+
+    public ServletBridgeHandler(String uriPrefix) {
         super(20000, 20000, 20000);
+        this.uriPrefix = uriPrefix;
     }
 
     public ServletBridgeHandler addInterceptor(
@@ -85,28 +96,32 @@ public class ServletBridgeHandler extends IdleStateHandler {
     public void channelRead(ChannelHandlerContext ctx, Object e)
             throws Exception {
 
-        HttpRequest request = (HttpRequest)e;
-        if (HttpHeaders.is100ContinueExpected(request)) {
-            ctx.channel().write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
+        if (e instanceof HttpRequest) {
+            HttpRequest request = (HttpRequest) e;
+
+            String uri = request.uri();
+
+            if (uri.startsWith(uriPrefix)) {
+                if (HttpHeaders.is100ContinueExpected(request)) {
+                    ctx.channel().write(new DefaultHttpResponse(HTTP_1_1, CONTINUE));
+                }
+
+
+                FilterChainImpl chain = ServletBridgeWebapp.get().initializeChain(request.uri());
+
+                if (chain.isValid()) {
+                    handleHttpServletRequest(ctx, request, chain);
+                } else if (ServletBridgeWebapp.get().getStaticResourcesFolder() != null) {
+
+                    handleStaticResourceRequest(ctx, request);
+
+                } else {
+
+                    throw new ServletBridgeRuntimeException(
+                        "No handler found for uri: " + request.getUri());
+                }
+            }
         }
-
-        FilterChainImpl chain = ServletBridgeWebapp.get().initializeChain(
-                request.getUri());
-
-        if (chain.isValid()) {
-
-            handleHttpServletRequest(ctx, request, chain);
-
-        } else if (ServletBridgeWebapp.get().getStaticResourcesFolder() != null) {
-
-            handleStaticResourceRequest(ctx, request);
-
-        } else {
-
-            throw new ServletBridgeRuntimeException(
-                    "No handler found for uri: " + request.getUri());
-        }
-
     }
 
     protected void handleHttpServletRequest(ChannelHandlerContext ctx,
@@ -148,12 +163,12 @@ public class ServletBridgeHandler extends IdleStateHandler {
 
     protected void handleStaticResourceRequest(ChannelHandlerContext ctx,
                                                HttpRequest request) throws Exception {
-        if (request.getMethod() != GET) {
+        if (request.method() != GET) {
             sendError(ctx, METHOD_NOT_ALLOWED);
             return;
         }
 
-        String uri = Utils.sanitizeUri(request.getUri());
+        String uri = Utils.sanitizeUri(request.uri());
         final String path = (uri != null ? ServletBridgeWebapp.get()
                 .getStaticResourcesFolder().getAbsolutePath()
                 + File.separator + uri : null);
@@ -302,5 +317,13 @@ public class ServletBridgeHandler extends IdleStateHandler {
 
     private boolean isSslChannel(Channel ch) {
         return ch.pipeline().get(SslHandler.class) != null;
+    }
+
+    public String getUriPrefix() {
+        return uriPrefix;
+    }
+
+    public void setUriPrefix(String uriPrefix) {
+        this.uriPrefix = uriPrefix;
     }
 }
