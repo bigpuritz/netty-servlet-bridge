@@ -87,8 +87,7 @@ public class ServletBridgeChannelPipelineFactory {
 
         ServletBridgeHandler bridge = new ServletBridgeHandler();
         bridge.addInterceptor(new ChannelInterceptor());
-        bridge
-                .addInterceptor(new HttpSessionInterceptor(
+        bridge.addInterceptor(new HttpSessionInterceptor(
                     getHttpSessionStore()));
         return bridge;
     }

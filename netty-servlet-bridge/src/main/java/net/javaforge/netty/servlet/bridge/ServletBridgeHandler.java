@@ -46,6 +46,7 @@ import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
+@ChannelHandler.Sharable
 public class ServletBridgeHandler extends IdleStateHandler {
 
 
@@ -84,6 +85,8 @@ public class ServletBridgeHandler extends IdleStateHandler {
             throws Exception {
         log.debug("Opening new channel: {}", ctx.channel().id());
         ServletBridgeWebapp.get().getSharedChannelGroup().add(ctx.channel());
+
+        ctx.fireChannelActive();
     }
 
     @Override
@@ -107,20 +110,20 @@ public class ServletBridgeHandler extends IdleStateHandler {
                 }
 
 
-                FilterChainImpl chain = ServletBridgeWebapp.get().initializeChain(request.uri());
+                FilterChainImpl chain = ServletBridgeWebapp.get().initializeChain(uri);
 
                 if (chain.isValid()) {
                     handleHttpServletRequest(ctx, request, chain);
                 } else if (ServletBridgeWebapp.get().getStaticResourcesFolder() != null) {
-
                     handleStaticResourceRequest(ctx, request);
-
                 } else {
-
                     throw new ServletBridgeRuntimeException(
                         "No handler found for uri: " + request.getUri());
                 }
             }
+        }
+        else {
+            ctx.fireChannelRead(e);
         }
     }
 
@@ -140,7 +143,9 @@ public class ServletBridgeHandler extends IdleStateHandler {
 
         resp.getWriter().flush();
 
-        boolean keepAlive = HttpHeaders.isKeepAlive(request);
+//        boolean keepAlive = HttpHeaders.isKeepAlive(request);
+
+        boolean keepAlive = false;
 
         if (keepAlive) {
 
@@ -153,7 +158,7 @@ public class ServletBridgeHandler extends IdleStateHandler {
         }
 
         // write response...
-        ChannelFuture future = ctx.channel().write(response);
+        ChannelFuture future = ctx.channel().writeAndFlush(response);
 
         if (!keepAlive) {
             future.addListener(ChannelFutureListener.CLOSE);

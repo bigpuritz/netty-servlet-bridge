@@ -24,6 +24,8 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -176,8 +178,20 @@ public class ServletContextImpl extends ConfigAdapter implements ServletContext 
 
     @Override
     public String getRealPath(String path) {
-        throw new IllegalStateException(
+        if ("/".equals(path)) {
+            try {
+                File file = File.createTempFile("netty-servlet-bridge", "");
+                file.mkdirs();
+                return file.getAbsolutePath();
+            } catch (IOException e) {
+                throw new IllegalStateException(
+                    "Method 'getRealPath' not yet implemented!");
+            }
+        }
+        else {
+            throw new IllegalStateException(
                 "Method 'getRealPath' not yet implemented!");
+        }
     }
 
     @Override
