@@ -121,6 +121,9 @@ public class ServletBridgeHandler extends IdleStateHandler {
                         "No handler found for uri: " + request.getUri());
                 }
             }
+            else {
+                ctx.fireChannelRead(e);
+            }
         }
         else {
             ctx.fireChannelRead(e);
@@ -137,15 +140,14 @@ public class ServletBridgeHandler extends IdleStateHandler {
         HttpServletResponseImpl resp = buildHttpServletResponse(response);
         HttpServletRequestImpl req = buildHttpServletRequest(request, chain);
 
+
         chain.doFilter(req, resp);
 
         interceptOnRequestSuccessed(ctx, request, response);
 
         resp.getWriter().flush();
 
-//        boolean keepAlive = HttpHeaders.isKeepAlive(request);
-
-        boolean keepAlive = false;
+        boolean keepAlive = HttpHeaders.isKeepAlive(request);
 
         if (keepAlive) {
 
