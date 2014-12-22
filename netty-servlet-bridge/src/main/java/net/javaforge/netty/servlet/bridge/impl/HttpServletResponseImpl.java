@@ -82,8 +82,18 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 
     @Override
     public void sendError(int sc, String msg) throws IOException {
-        this.originalResponse.setStatus(new HttpResponseStatus(sc, msg));
+        //Fix the following exception
+        /*
+        java.lang.IllegalArgumentException: reasonPhrase contains one of the following prohibited characters: \r\n: FAILED - Cannot find View Map for null.
 
+            at io.netty.handler.codec.http.HttpResponseStatus.<init>(HttpResponseStatus.java:514) ~[netty-all-4.1.0.Beta3.jar:4.1.0.Beta3]
+        at io.netty.handler.codec.http.HttpResponseStatus.<init>(HttpResponseStatus.java:496) ~[netty-all-4.1.0.Beta3.jar:4.1.0.Beta3]
+        */
+        if (msg != null) {
+            msg = msg.replace('\r', ' ');
+            msg = msg.replace('\n', ' ');
+        }
+        this.originalResponse.setStatus(new HttpResponseStatus(sc, msg));
     }
 
     @Override

@@ -36,7 +36,9 @@ import java.net.InetSocketAddress;
 import java.security.Principal;
 import java.util.*;
 
+import static io.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
 import static io.netty.handler.codec.http.HttpHeaders.Names.COOKIE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.WWW_AUTHENTICATE;
 
 @SuppressWarnings("unchecked")
 public class HttpServletRequestImpl implements HttpServletRequest {
@@ -54,6 +56,8 @@ public class HttpServletRequestImpl implements HttpServletRequest {
     private QueryStringDecoder queryStringDecoder;
 
     private Map<String, Object> attributes;
+
+    private Principal userPrincipal;
 
 //    private ServerCookieDecoder cookieDecoder = new ServerCookieDecoder();
 
@@ -397,8 +401,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
     @Override
     public String getAuthType() {
-        throw new IllegalStateException(
-                "Method 'getAuthType' not yet implemented!");
+        return getHeader(WWW_AUTHENTICATE);
     }
 
     @Override
@@ -409,14 +412,12 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
     @Override
     public String getRemoteUser() {
-        throw new IllegalStateException(
-                "Method 'getRemoteUser' not yet implemented!");
+        return getHeader(AUTHORIZATION);
     }
 
     @Override
     public Principal getUserPrincipal() {
-        throw new IllegalStateException(
-                "Method 'getUserPrincipal' not yet implemented!");
+        return userPrincipal;
     }
 
     @Override

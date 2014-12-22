@@ -33,7 +33,7 @@ public class ServletBridgeWebapp {
 
     private ChannelGroup sharedChannelGroup;
 
-    public static final ServletBridgeWebapp get() {
+    public static ServletBridgeWebapp get() {
 
         if (instance == null)
             instance = new ServletBridgeWebapp();

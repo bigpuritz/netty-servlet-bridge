@@ -16,6 +16,7 @@
 
 package net.javaforge.netty.servlet.bridge.impl;
 
+import net.javaforge.netty.servlet.bridge.config.ServletConfiguration;
 import net.javaforge.netty.servlet.bridge.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,15 +25,13 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @SuppressWarnings("unchecked")
 public class ServletContextImpl extends ConfigAdapter implements ServletContext {
@@ -46,7 +45,7 @@ public class ServletContextImpl extends ConfigAdapter implements ServletContext 
 
     private String servletContextName;
 
-    public static final ServletContextImpl get() {
+    public static ServletContextImpl get() {
         if (instance == null)
             instance = new ServletContextImpl();
 
@@ -172,8 +171,15 @@ public class ServletContextImpl extends ConfigAdapter implements ServletContext 
 
     @Override
     public RequestDispatcher getNamedDispatcher(String name) {
-        throw new IllegalStateException(
-                "Method 'getNamedDispatcher' not yet implemented!");
+        Collection<ServletConfiguration> colls = ServletBridgeWebapp.get().getWebappConfig().getServletConfigurations();
+        HttpServlet servlet = null;
+        for(ServletConfiguration configuration: colls) {
+            if (configuration.getConfig().getServletName().equals(name)) {
+                servlet = configuration.getHttpComponent();
+            }
+        }
+
+        return new RequestDispatcherImpl(name, null, servlet);
     }
 
     @Override
@@ -196,8 +202,17 @@ public class ServletContextImpl extends ConfigAdapter implements ServletContext 
 
     @Override
     public RequestDispatcher getRequestDispatcher(String path) {
-        throw new IllegalStateException(
-                "Method 'getRequestDispatcher' not yet implemented!");
+        Collection<ServletConfiguration> colls = ServletBridgeWebapp.get().getWebappConfig().getServletConfigurations();
+        HttpServlet servlet = null;
+        String servletName = null;
+        for(ServletConfiguration configuration: colls) {
+            if (configuration.matchesUrlPattern(path)) {
+                servlet = configuration.getHttpComponent();
+                servletName = configuration.getHttpComponent().getServletName();
+            }
+        }
+
+        return new RequestDispatcherImpl(servletName, path, servlet);
     }
 
 }

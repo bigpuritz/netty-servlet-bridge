@@ -18,6 +18,7 @@ package net.javaforge.netty.servlet.bridge;
 
 import net.javaforge.netty.servlet.bridge.impl.HttpSessionImpl;
 import net.javaforge.netty.servlet.bridge.impl.ServletBridgeWebapp;
+import net.javaforge.netty.servlet.bridge.session.DefaultServletBridgeHttpSessionStore;
 import net.javaforge.netty.servlet.bridge.session.ServletBridgeHttpSessionStore;
 
 public class HttpSessionThreadLocal {
@@ -51,6 +52,10 @@ public class HttpSessionThreadLocal {
 
     public static HttpSessionImpl getOrCreate() {
         if (HttpSessionThreadLocal.get() == null) {
+            if (sessionStore == null) {
+                sessionStore = new DefaultServletBridgeHttpSessionStore();
+            }
+
             HttpSessionImpl newSession = sessionStore.createSession();
             newSession.setMaxInactiveInterval(ServletBridgeWebapp.get()
                     .getWebappConfig().getSessionTimeout());
