@@ -18,18 +18,18 @@ package net.javaforge.netty.servlet.bridge;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.timeout.IdleStateHandler;
-import net.javaforge.netty.servlet.bridge.impl.FilterChainImpl;
-import net.javaforge.netty.servlet.bridge.impl.HttpServletRequestImpl;
-import net.javaforge.netty.servlet.bridge.impl.HttpServletResponseImpl;
-import net.javaforge.netty.servlet.bridge.impl.ServletBridgeWebapp;
-import net.javaforge.netty.servlet.bridge.util.Utils;
 import io.netty.channel.*;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
+import net.javaforge.netty.servlet.bridge.impl.FilterChainImpl;
+import net.javaforge.netty.servlet.bridge.impl.HttpServletRequestImpl;
+import net.javaforge.netty.servlet.bridge.impl.HttpServletResponseImpl;
+import net.javaforge.netty.servlet.bridge.impl.ServletBridgeWebapp;
+import net.javaforge.netty.servlet.bridge.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,7 +92,7 @@ public class ServletBridgeHandler extends IdleStateHandler {
     @Override
     public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e) {
         log.debug("Closing idle channel: {}", ctx.channel().id());
-       ctx.channel().close();
+        ctx.channel().close();
     }
 
     @Override
@@ -118,14 +118,12 @@ public class ServletBridgeHandler extends IdleStateHandler {
                     handleStaticResourceRequest(ctx, request);
                 } else {
                     throw new ServletBridgeRuntimeException(
-                        "No handler found for uri: " + request.getUri());
+                            "No handler found for uri: " + request.getUri());
                 }
-            }
-            else {
+            } else {
                 ctx.fireChannelRead(e);
             }
-        }
-        else {
+        } else {
             ctx.fireChannelRead(e);
         }
     }
@@ -228,7 +226,7 @@ public class ServletBridgeHandler extends IdleStateHandler {
                 @Override
                 public void operationProgressed(ChannelProgressiveFuture channelProgressiveFuture, long current, long total) throws Exception {
                     System.out.printf("%s: %d / %d (+%d)%n", path, current,
-                        total, total);
+                            total, total);
                 }
 
                 @Override

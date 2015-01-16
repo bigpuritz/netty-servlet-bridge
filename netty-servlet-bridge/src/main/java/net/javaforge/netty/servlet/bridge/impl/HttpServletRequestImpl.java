@@ -17,11 +17,11 @@
 package net.javaforge.netty.servlet.bridge.impl;
 
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders.Names;
+import io.netty.handler.ssl.SslHandler;
 import net.javaforge.netty.servlet.bridge.ChannelThreadLocal;
 import net.javaforge.netty.servlet.bridge.HttpSessionThreadLocal;
 import net.javaforge.netty.servlet.bridge.util.Utils;
-import io.netty.handler.codec.http.HttpHeaders.Names;
-import io.netty.handler.ssl.SslHandler;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletInputStream;
@@ -36,9 +36,7 @@ import java.net.InetSocketAddress;
 import java.security.Principal;
 import java.util.*;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
-import static io.netty.handler.codec.http.HttpHeaders.Names.COOKIE;
-import static io.netty.handler.codec.http.HttpHeaders.Names.WWW_AUTHENTICATE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 
 @SuppressWarnings("unchecked")
 public class HttpServletRequestImpl implements HttpServletRequest {
@@ -67,9 +65,8 @@ public class HttpServletRequestImpl implements HttpServletRequest {
         this.originalRequest = request;
 
         if (request instanceof FullHttpRequest) {
-            this.inputStream = new ServletInputStreamImpl((FullHttpRequest)request);
-        }
-        else {
+            this.inputStream = new ServletInputStreamImpl((FullHttpRequest) request);
+        } else {
             this.inputStream = new ServletInputStreamImpl(request);
         }
         this.reader = new BufferedReader(new InputStreamReader(inputStream));
@@ -103,7 +100,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
                     Cookie cookie = new Cookie(c.getName(), c.getValue());
                     cookie.setComment(c.getComment());
                     cookie.setDomain(c.getDomain());
-                    cookie.setMaxAge((int)c.getMaxAge());
+                    cookie.setMaxAge((int) c.getMaxAge());
                     cookie.setPath(c.getPath());
                     cookie.setSecure(c.isSecure());
                     cookie.setVersion(c.getVersion());

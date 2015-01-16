@@ -16,11 +16,11 @@
 
 package net.javaforge.netty.servlet.bridge.interceptor;
 
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
 import net.javaforge.netty.servlet.bridge.ChannelThreadLocal;
 import net.javaforge.netty.servlet.bridge.ServletBridgeInterceptor;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.HttpResponse;
 
 public class ChannelInterceptor implements ServletBridgeInterceptor {
 

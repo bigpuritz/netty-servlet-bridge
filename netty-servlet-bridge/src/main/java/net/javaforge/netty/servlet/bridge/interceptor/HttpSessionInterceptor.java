@@ -16,13 +16,13 @@
 
 package net.javaforge.netty.servlet.bridge.interceptor;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.*;
 import net.javaforge.netty.servlet.bridge.HttpSessionThreadLocal;
 import net.javaforge.netty.servlet.bridge.ServletBridgeInterceptor;
 import net.javaforge.netty.servlet.bridge.impl.HttpSessionImpl;
 import net.javaforge.netty.servlet.bridge.session.ServletBridgeHttpSessionStore;
 import net.javaforge.netty.servlet.bridge.util.Utils;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.*;
 
 import java.util.Collection;
 

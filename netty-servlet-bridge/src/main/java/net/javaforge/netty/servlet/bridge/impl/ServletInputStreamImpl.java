@@ -35,6 +35,7 @@ public class ServletInputStreamImpl extends ServletInputStream {
 
         this.in = new ByteBufInputStream(request.content());
     }
+
     public ServletInputStreamImpl(HttpRequest request) {
         this.request = request;
 
@@ -54,7 +55,7 @@ public class ServletInputStreamImpl extends ServletInputStream {
 
     @Override
     public int read(byte[] buf, int offset, int len) throws IOException {
-        return this.in.read(buf,offset,len);
+        return this.in.read(buf, offset, len);
     }
 
 }

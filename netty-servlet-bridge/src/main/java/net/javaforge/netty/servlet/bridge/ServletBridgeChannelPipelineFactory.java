@@ -16,6 +16,16 @@
 
 package net.javaforge.netty.servlet.bridge;
 
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.handler.codec.http.HttpContentCompressor;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultEventExecutor;
 import net.javaforge.netty.servlet.bridge.config.WebappConfiguration;
 import net.javaforge.netty.servlet.bridge.impl.ServletBridgeWebapp;
@@ -23,18 +33,9 @@ import net.javaforge.netty.servlet.bridge.interceptor.ChannelInterceptor;
 import net.javaforge.netty.servlet.bridge.interceptor.HttpSessionInterceptor;
 import net.javaforge.netty.servlet.bridge.session.DefaultServletBridgeHttpSessionStore;
 import net.javaforge.netty.servlet.bridge.session.ServletBridgeHttpSessionStore;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelPipeline;
+
 //import io.netty.channel.ChannelPipelineFactory;
-import io.netty.channel.group.ChannelGroup;
-import io.netty.channel.group.DefaultChannelGroup;
 //import io.netty.handler.codec.http.HttpChunkAggregator;
-import io.netty.handler.codec.http.HttpContentCompressor;
-import io.netty.handler.codec.http.HttpRequestDecoder;
-import io.netty.handler.codec.http.HttpResponseEncoder;
-import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.HashedWheelTimer;
-import io.netty.util.Timer;
 
 //TODO Just fix the compilation error. not right implementation
 public class ServletBridgeChannelPipelineFactory {
@@ -72,7 +73,7 @@ public class ServletBridgeChannelPipelineFactory {
         this.allChannels.close().awaitUninterruptibly();
     }
 
-//    @Override
+    //    @Override
     public final ChannelPipeline pipeline() {
         ChannelPipeline pipeline = getDefaulHttpChannelPipeline();
         pipeline.addLast("handler", getServletBridgeHandler());
@@ -88,7 +89,7 @@ public class ServletBridgeChannelPipelineFactory {
         ServletBridgeHandler bridge = new ServletBridgeHandler();
         bridge.addInterceptor(new ChannelInterceptor());
         bridge.addInterceptor(new HttpSessionInterceptor(
-                    getHttpSessionStore()));
+                getHttpSessionStore()));
         return bridge;
     }
 

@@ -173,7 +173,7 @@ public class ServletContextImpl extends ConfigAdapter implements ServletContext 
     public RequestDispatcher getNamedDispatcher(String name) {
         Collection<ServletConfiguration> colls = ServletBridgeWebapp.get().getWebappConfig().getServletConfigurations();
         HttpServlet servlet = null;
-        for(ServletConfiguration configuration: colls) {
+        for (ServletConfiguration configuration : colls) {
             if (configuration.getConfig().getServletName().equals(name)) {
                 servlet = configuration.getHttpComponent();
             }
@@ -191,12 +191,11 @@ public class ServletContextImpl extends ConfigAdapter implements ServletContext 
                 return file.getAbsolutePath();
             } catch (IOException e) {
                 throw new IllegalStateException(
-                    "Method 'getRealPath' not yet implemented!");
+                        "Method 'getRealPath' not yet implemented!");
             }
-        }
-        else {
+        } else {
             throw new IllegalStateException(
-                "Method 'getRealPath' not yet implemented!");
+                    "Method 'getRealPath' not yet implemented!");
         }
     }
 
@@ -205,7 +204,7 @@ public class ServletContextImpl extends ConfigAdapter implements ServletContext 
         Collection<ServletConfiguration> colls = ServletBridgeWebapp.get().getWebappConfig().getServletConfigurations();
         HttpServlet servlet = null;
         String servletName = null;
-        for(ServletConfiguration configuration: colls) {
+        for (ServletConfiguration configuration : colls) {
             if (configuration.matchesUrlPattern(path)) {
                 servlet = configuration.getHttpComponent();
                 servletName = configuration.getHttpComponent().getServletName();

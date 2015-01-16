@@ -17,10 +17,7 @@
 package net.javaforge.netty.servlet.bridge.impl;
 
 import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpResponse;
 
 import javax.servlet.ServletOutputStream;
 import java.io.IOException;
@@ -50,7 +47,7 @@ public class ServletOutputStreamImpl extends ServletOutputStream {
 
     @Override
     public void write(byte[] b, int offset, int len) throws IOException {
-        this.out.write(b,offset,len);
+        this.out.write(b, offset, len);
     }
 
     @Override

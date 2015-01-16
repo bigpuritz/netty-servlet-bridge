@@ -10,7 +10,7 @@ import java.io.IOException;
 
 /**
  * Simple RequestDispatcher Implementation
- *
+ * <p/>
  * Created by xshao on 12/22/14.
  */
 public class RequestDispatcherImpl implements RequestDispatcher {
@@ -41,9 +41,8 @@ public class RequestDispatcherImpl implements RequestDispatcher {
         if (httpServlet != null) {
             //TODO Wrap
             httpServlet.service(servletRequest, servletResponse);
-        }
-        else {
-            ((HttpServletResponse)servletResponse).sendError(HttpServletResponse.SC_NOT_FOUND);
+        } else {
+            ((HttpServletResponse) servletResponse).sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 
@@ -52,9 +51,8 @@ public class RequestDispatcherImpl implements RequestDispatcher {
         if (httpServlet != null) {
             //TODO Wrap
             httpServlet.service(servletRequest, servletResponse);
-        }
-        else {
-            ((HttpServletResponse)servletResponse).sendError(HttpServletResponse.SC_NOT_FOUND);
+        } else {
+            ((HttpServletResponse) servletResponse).sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 }

@@ -17,8 +17,8 @@
 package net.javaforge.netty.servlet.bridge.impl;
 
 import io.netty.handler.codec.http.*;
-import net.javaforge.netty.servlet.bridge.ServletBridgeRuntimeException;
 import io.netty.handler.codec.http.HttpHeaders.Names;
+import net.javaforge.netty.servlet.bridge.ServletBridgeRuntimeException;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;

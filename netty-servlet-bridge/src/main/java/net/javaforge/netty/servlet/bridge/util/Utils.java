@@ -16,11 +16,11 @@
 
 package net.javaforge.netty.servlet.bridge.util;
 
-import net.javaforge.netty.servlet.bridge.ServletBridgeRuntimeException;
 import io.netty.handler.codec.http.Cookie;
 import io.netty.handler.codec.http.CookieDecoder;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
+import net.javaforge.netty.servlet.bridge.ServletBridgeRuntimeException;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -80,7 +80,8 @@ public final class Utils {
      * the content type is null, or there is no explicit character encoding,
      * <code>null</code> is returned.
      *
-     * @param contentType a content type header
+     * @param contentType
+     *         a content type header
      */
     public static final String getCharsetFromContentType(String contentType) {
 
