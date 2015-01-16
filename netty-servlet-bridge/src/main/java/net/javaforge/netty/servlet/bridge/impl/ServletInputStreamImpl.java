@@ -16,8 +16,10 @@
 
 package net.javaforge.netty.servlet.bridge.impl;
 
-import org.jboss.netty.buffer.ChannelBufferInputStream;
-import org.jboss.netty.handler.codec.http.HttpRequest;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpRequest;
 
 import javax.servlet.ServletInputStream;
 import java.io.IOException;
@@ -26,12 +28,19 @@ public class ServletInputStreamImpl extends ServletInputStream {
 
     private HttpRequest request;
 
-    private ChannelBufferInputStream in;
+    private ByteBufInputStream in;
 
+    public ServletInputStreamImpl(FullHttpRequest request) {
+        this.request = request;
+
+        this.in = new ByteBufInputStream(request.content());
+    }
     public ServletInputStreamImpl(HttpRequest request) {
         this.request = request;
-        this.in = new ChannelBufferInputStream(this.request.getContent());
+
+        this.in = new ByteBufInputStream(Unpooled.buffer(0));
     }
+
 
     @Override
     public int read() throws IOException {

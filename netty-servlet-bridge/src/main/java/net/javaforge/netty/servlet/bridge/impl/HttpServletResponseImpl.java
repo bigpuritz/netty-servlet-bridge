@@ -16,12 +16,9 @@
 
 package net.javaforge.netty.servlet.bridge.impl;
 
+import io.netty.handler.codec.http.*;
 import net.javaforge.netty.servlet.bridge.ServletBridgeRuntimeException;
-import org.jboss.netty.handler.codec.http.CookieEncoder;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
-import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpHeaders.Names;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
@@ -32,8 +29,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Locale;
 
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.LOCATION;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SET_COOKIE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.LOCATION;
+import static io.netty.handler.codec.http.HttpHeaders.Names.SET_COOKIE;
 
 public class HttpServletResponseImpl implements HttpServletResponse {
     private HttpResponse originalResponse;
@@ -42,7 +39,7 @@ public class HttpServletResponseImpl implements HttpServletResponse {
     private boolean responseCommited = false;
     private Locale locale = null;
 
-    public HttpServletResponseImpl(HttpResponse response) {
+    public HttpServletResponseImpl(FullHttpResponse response) {
         this.originalResponse = response;
         this.outputStream = new ServletOutputStreamImpl(response);
         this.writer = new PrintWriterImpl(this.outputStream);
@@ -54,10 +51,8 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 
     @Override
     public void addCookie(Cookie cookie) {
-        CookieEncoder cookieEncoder = new CookieEncoder(true);
-        cookieEncoder.addCookie(cookie.getName(), cookie.getValue());
-        HttpHeaders.addHeader(this.originalResponse, SET_COOKIE, cookieEncoder
-                .encode());
+        String result = ServerCookieEncoder.encode(new io.netty.handler.codec.http.DefaultCookie(cookie.getName(), cookie.getValue()));
+        HttpHeaders.addHeader(this.originalResponse, SET_COOKIE, result);
     }
 
     @Override
@@ -77,7 +72,7 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 
     @Override
     public boolean containsHeader(String name) {
-        return this.originalResponse.containsHeader(name);
+        return this.originalResponse.headers().contains(name);
     }
 
     @Override
@@ -87,8 +82,18 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 
     @Override
     public void sendError(int sc, String msg) throws IOException {
-        this.originalResponse.setStatus(new HttpResponseStatus(sc, msg));
+        //Fix the following exception
+        /*
+        java.lang.IllegalArgumentException: reasonPhrase contains one of the following prohibited characters: \r\n: FAILED - Cannot find View Map for null.
 
+            at io.netty.handler.codec.http.HttpResponseStatus.<init>(HttpResponseStatus.java:514) ~[netty-all-4.1.0.Beta3.jar:4.1.0.Beta3]
+        at io.netty.handler.codec.http.HttpResponseStatus.<init>(HttpResponseStatus.java:496) ~[netty-all-4.1.0.Beta3.jar:4.1.0.Beta3]
+        */
+        if (msg != null) {
+            msg = msg.replace('\r', ' ');
+            msg = msg.replace('\n', ' ');
+        }
+        this.originalResponse.setStatus(new HttpResponseStatus(sc, msg));
     }
 
     @Override
@@ -160,7 +165,7 @@ public class HttpServletResponseImpl implements HttpServletResponse {
         if (isCommitted())
             throw new IllegalStateException("Response already commited!");
 
-        this.originalResponse.clearHeaders();
+        this.originalResponse.headers().clear();
         this.resetBuffer();
     }
 

@@ -21,14 +21,12 @@ import net.javaforge.netty.servlet.bridge.ServletBridgeInterceptor;
 import net.javaforge.netty.servlet.bridge.impl.HttpSessionImpl;
 import net.javaforge.netty.servlet.bridge.session.ServletBridgeHttpSessionStore;
 import net.javaforge.netty.servlet.bridge.util.Utils;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.handler.codec.http.*;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.*;
 
 import java.util.Collection;
 
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SET_COOKIE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.SET_COOKIE;
 
 public class HttpSessionInterceptor implements ServletBridgeInterceptor {
 
@@ -39,11 +37,10 @@ public class HttpSessionInterceptor implements ServletBridgeInterceptor {
     }
 
     @Override
-    public void onRequestReceived(ChannelHandlerContext ctx, MessageEvent e) {
+    public void onRequestReceived(ChannelHandlerContext ctx, HttpRequest request) {
 
         HttpSessionThreadLocal.unset();
 
-        HttpRequest request = (HttpRequest) e.getMessage();
         Collection<Cookie> cookies = Utils.getCookies(
                 HttpSessionImpl.SESSION_ID_KEY, request);
         if (cookies != null) {
@@ -61,20 +58,18 @@ public class HttpSessionInterceptor implements ServletBridgeInterceptor {
     }
 
     @Override
-    public void onRequestSuccessed(ChannelHandlerContext ctx, MessageEvent e,
+    public void onRequestSuccessed(ChannelHandlerContext ctx, HttpRequest request,
                                    HttpResponse response) {
 
         HttpSessionImpl s = HttpSessionThreadLocal.get();
         if (s != null && !this.sessionRequestedByCookie) {
-            CookieEncoder cookieEncoder = new CookieEncoder(true);
-            cookieEncoder.addCookie(HttpSessionImpl.SESSION_ID_KEY, s.getId());
-            HttpHeaders.addHeader(response, SET_COOKIE, cookieEncoder.encode());
+            HttpHeaders.addHeader(response, SET_COOKIE, ServerCookieEncoder.encode(HttpSessionImpl.SESSION_ID_KEY, s.getId()));
         }
 
     }
 
     @Override
-    public void onRequestFailed(ChannelHandlerContext ctx, ExceptionEvent e,
+    public void onRequestFailed(ChannelHandlerContext ctx, Throwable e,
                                 HttpResponse response) {
         this.sessionRequestedByCookie = false;
         HttpSessionThreadLocal.unset();

@@ -16,28 +16,27 @@
 
 package net.javaforge.netty.servlet.bridge.interceptor;
 
+import io.netty.handler.codec.http.HttpRequest;
 import net.javaforge.netty.servlet.bridge.ChannelThreadLocal;
 import net.javaforge.netty.servlet.bridge.ServletBridgeInterceptor;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.handler.codec.http.HttpResponse;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.HttpResponse;
 
 public class ChannelInterceptor implements ServletBridgeInterceptor {
 
     @Override
-    public void onRequestFailed(ChannelHandlerContext ctx, ExceptionEvent e,
+    public void onRequestFailed(ChannelHandlerContext ctx, Throwable e,
                                 HttpResponse response) {
         ChannelThreadLocal.unset();
     }
 
     @Override
-    public void onRequestReceived(ChannelHandlerContext ctx, MessageEvent e) {
-        ChannelThreadLocal.set(e.getChannel());
+    public void onRequestReceived(ChannelHandlerContext ctx, HttpRequest e) {
+        ChannelThreadLocal.set(ctx.channel());
     }
 
     @Override
-    public void onRequestSuccessed(ChannelHandlerContext ctx, MessageEvent e,
+    public void onRequestSuccessed(ChannelHandlerContext ctx, HttpRequest e,
                                    HttpResponse response) {
         ChannelThreadLocal.unset();
     }

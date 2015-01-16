@@ -16,15 +16,12 @@
 
 package net.javaforge.netty.servlet.bridge.impl;
 
+import io.netty.handler.codec.http.*;
 import net.javaforge.netty.servlet.bridge.ChannelThreadLocal;
 import net.javaforge.netty.servlet.bridge.HttpSessionThreadLocal;
 import net.javaforge.netty.servlet.bridge.util.Utils;
-import org.jboss.netty.handler.codec.http.CookieDecoder;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.QueryStringDecoder;
-import org.jboss.netty.handler.ssl.SslHandler;
+import io.netty.handler.codec.http.HttpHeaders.Names;
+import io.netty.handler.ssl.SslHandler;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletInputStream;
@@ -39,7 +36,9 @@ import java.net.InetSocketAddress;
 import java.security.Principal;
 import java.util.*;
 
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.COOKIE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpHeaders.Names.COOKIE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.WWW_AUTHENTICATE;
 
 @SuppressWarnings("unchecked")
 public class HttpServletRequestImpl implements HttpServletRequest {
@@ -58,13 +57,21 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
     private Map<String, Object> attributes;
 
-    private CookieDecoder cookieDecoder = new CookieDecoder();
+    private Principal userPrincipal;
+
+//    private ServerCookieDecoder cookieDecoder = new ServerCookieDecoder();
 
     private String characterEncoding;
 
     public HttpServletRequestImpl(HttpRequest request, FilterChainImpl chain) {
         this.originalRequest = request;
-        this.inputStream = new ServletInputStreamImpl(request);
+
+        if (request instanceof FullHttpRequest) {
+            this.inputStream = new ServletInputStreamImpl((FullHttpRequest)request);
+        }
+        else {
+            this.inputStream = new ServletInputStreamImpl(request);
+        }
         this.reader = new BufferedReader(new InputStreamReader(inputStream));
         this.queryStringDecoder = new QueryStringDecoder(request.getUri());
         this.uriParser = new URIParser(chain);
@@ -85,18 +92,18 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
     @Override
     public Cookie[] getCookies() {
-        String cookieString = this.originalRequest.getHeader(COOKIE);
+        String cookieString = this.originalRequest.headers().get(COOKIE);
         if (cookieString != null) {
-            Set<org.jboss.netty.handler.codec.http.Cookie> cookies = cookieDecoder
+            Set<io.netty.handler.codec.http.Cookie> cookies = CookieDecoder
                     .decode(cookieString);
             if (!cookies.isEmpty()) {
                 Cookie[] cookiesArray = new Cookie[cookies.size()];
                 int indx = 0;
-                for (org.jboss.netty.handler.codec.http.Cookie c : cookies) {
+                for (io.netty.handler.codec.http.Cookie c : cookies) {
                     Cookie cookie = new Cookie(c.getName(), c.getValue());
                     cookie.setComment(c.getComment());
                     cookie.setDomain(c.getDomain());
-                    cookie.setMaxAge(c.getMaxAge());
+                    cookie.setMaxAge((int)c.getMaxAge());
                     cookie.setPath(c.getPath());
                     cookie.setSecure(c.isSecure());
                     cookie.setVersion(c.getVersion());
@@ -126,12 +133,12 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
     @Override
     public Enumeration getHeaderNames() {
-        return Utils.enumeration(this.originalRequest.getHeaderNames());
+        return Utils.enumeration(this.originalRequest.headers().names());
     }
 
     @Override
     public Enumeration getHeaders(String name) {
-        return Utils.enumeration(this.originalRequest.getHeaders(name));
+        return Utils.enumeration(this.originalRequest.headers().getAll(name));
     }
 
     @Override
@@ -141,7 +148,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
     @Override
     public String getMethod() {
-        return this.originalRequest.getMethod().getName();
+        return this.originalRequest.method().name();
     }
 
     @Override
@@ -209,18 +216,18 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
     @Override
     public Map getParameterMap() {
-        return this.queryStringDecoder.getParameters();
+        return this.queryStringDecoder.parameters();
     }
 
     @Override
     public Enumeration getParameterNames() {
         return Utils.enumerationFromKeys(this.queryStringDecoder
-                .getParameters());
+                .parameters());
     }
 
     @Override
     public String[] getParameterValues(String name) {
-        List<String> values = this.queryStringDecoder.getParameters().get(name);
+        List<String> values = this.queryStringDecoder.parameters().get(name);
         if (values == null || values.isEmpty())
             return null;
         return values.toArray(new String[values.size()]);
@@ -299,35 +306,35 @@ public class HttpServletRequestImpl implements HttpServletRequest {
     @Override
     public String getRemoteAddr() {
         InetSocketAddress addr = (InetSocketAddress) ChannelThreadLocal.get()
-                .getRemoteAddress();
+                .remoteAddress();
         return addr.getAddress().getHostAddress();
     }
 
     @Override
     public String getRemoteHost() {
         InetSocketAddress addr = (InetSocketAddress) ChannelThreadLocal.get()
-                .getRemoteAddress();
+                .remoteAddress();
         return addr.getHostName();
     }
 
     @Override
     public int getRemotePort() {
         InetSocketAddress addr = (InetSocketAddress) ChannelThreadLocal.get()
-                .getRemoteAddress();
+                .remoteAddress();
         return addr.getPort();
     }
 
     @Override
     public String getServerName() {
         InetSocketAddress addr = (InetSocketAddress) ChannelThreadLocal.get()
-                .getLocalAddress();
+                .localAddress();
         return addr.getHostName();
     }
 
     @Override
     public int getServerPort() {
         InetSocketAddress addr = (InetSocketAddress) ChannelThreadLocal.get()
-                .getLocalAddress();
+                .localAddress();
         return addr.getPort();
     }
 
@@ -347,7 +354,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
     @Override
     public boolean isSecure() {
-        return ChannelThreadLocal.get().getPipeline().get(SslHandler.class) != null;
+        return ChannelThreadLocal.get().pipeline().get(SslHandler.class) != null;
     }
 
     @Override
@@ -358,7 +365,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
     @Override
     public String getLocalAddr() {
         InetSocketAddress addr = (InetSocketAddress) ChannelThreadLocal.get()
-                .getLocalAddress();
+                .localAddress();
         return addr.getAddress().getHostAddress();
     }
 
@@ -394,8 +401,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
     @Override
     public String getAuthType() {
-        throw new IllegalStateException(
-                "Method 'getAuthType' not yet implemented!");
+        return getHeader(WWW_AUTHENTICATE);
     }
 
     @Override
@@ -406,14 +412,12 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
     @Override
     public String getRemoteUser() {
-        throw new IllegalStateException(
-                "Method 'getRemoteUser' not yet implemented!");
+        return getHeader(AUTHORIZATION);
     }
 
     @Override
     public Principal getUserPrincipal() {
-        throw new IllegalStateException(
-                "Method 'getUserPrincipal' not yet implemented!");
+        return userPrincipal;
     }
 
     @Override
