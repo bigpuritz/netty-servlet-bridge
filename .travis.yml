@@ -1,1 +1,2 @@
 language: java
+before_install: cd netty-servlet-bridge
